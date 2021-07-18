@@ -93,6 +93,9 @@ function two_init {
 }
 
 function tici_init {
+  # UI starts too fast on release
+  sleep 5
+
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
   nmcli connection modify --temporary lte gsm.auto-config yes
