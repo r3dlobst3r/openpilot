@@ -1249,6 +1249,12 @@ DBC = {
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
 }
 
+# msgs sent for steering controller by camera module on can 0.
+# those messages are mutually exclusive on CRV and non-CRV cars
+ECU_FINGERPRINT = {
+  Ecu.fwdCamera: [0xE4, 0x194],   # steer torque cmd
+}
+
 STEER_THRESHOLD = {
   CAR.ACCORD: 1200,
   CAR.ACCORDH: 1200,
