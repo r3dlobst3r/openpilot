@@ -5,9 +5,9 @@ from panda import Panda
 from common.numpy_fast import clip, interp
 from common.params import Params
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
+from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL, Ecu, ECU_FINGERPRINT, FINGERPRINTS
 from selfdrive.car.honda.hondacan import disable_radar
-from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -122,12 +122,14 @@ class CarInterface(CarInterfaceBase):
     return float(max(max_accel, a_target / CarControllerParams.ACCEL_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):  # pylint: disable=dangerous-default-value
+    ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.carName = "honda"
 
     if candidate in HONDA_BOSCH:
-      ret.safetyModel = car.CarParams.SafetyModel.hondaBoschHarness
+      ret.safetyModel = car.CarParams.SafetyModel.hondaBoschHarness if has_relay else car.CarParams.SafetyModel.hondaBoschGiraffe
+      rdr_bus = 0 if has_relay else 2
+      ret.enableCamera = is_ecu_disconnected(fingerprint[rdr_bus], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay      
       ret.radarOffCan = True
 
       # Disable the radar and let openpilot control longitudinal
@@ -140,6 +142,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyModel = car.CarParams.SafetyModel.hondaNidec
       ret.enableGasInterceptor = 0x201 in fingerprint[0]
       ret.openpilotLongitudinalControl = True
+      ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
 
       ret.pcmCruise = not ret.enableGasInterceptor
       ret.communityFeature = ret.enableGasInterceptor
