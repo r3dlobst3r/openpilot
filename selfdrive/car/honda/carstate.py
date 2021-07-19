@@ -373,7 +373,7 @@ class CarState(CarStateBase):
 
   def get_can_parser(self, CP):
     signals, checks = get_can_signals(CP, self.gearbox_msg)
-    bus_pt = 1 if CP.carFingerprint in HONDA_BOSCH else 0
+    bus_pt = 1 if CP.isPandaBlackDEPRECATED and CP.carFingerprint in HONDA_BOSCH else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus_pt)
 
   @staticmethod
@@ -399,7 +399,8 @@ class CarState(CarStateBase):
         ("BRAKE_COMMAND", 50),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    bus_cam = 1 if CP.carFingerprint in HONDA_BOSCH and not CP.isPandaBlackDEPRECATED else 2
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus_cam)
 
   @staticmethod
   def get_body_can_parser(CP):
